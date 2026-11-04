@@ -27,6 +27,13 @@ jobs:
         with:
           node-version: '22'
 
+      # 同一份调试签名证书在多次构建间复用，升级安装可覆盖旧包
+      - name: Restore debug keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
       - name: Fetch web app assets
         run: |
           set -e
@@ -36,12 +43,6 @@ jobs:
 
       - name: Patch build for in-app container
         run: python3 tools/patch-basename.py
-
-      - name: Use stable debug keystore
-        run: |
-          mkdir -p "$HOME/.android"
-          base64 -d keystore/debug.keystore.b64 > "$HOME/.android/debug.keystore"
-          ls -l "$HOME/.android/debug.keystore"
 
       - name: Install Capacitor
         run: |
@@ -57,7 +58,8 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon 2>&1 | tee ../gradle.log
+          exit ${PIPESTATUS[0]}
 
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk overtime-tracker.apk
@@ -79,3 +81,27 @@ jobs:
           name: "加班工时统计 APK build ${{ github.run_number }}"
           files: overtime-tracker.apk
           draft: false
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          {
+            echo "== java =="
+            java -version 2>&1 | head -n 3
+            echo "== keystore =="
+            ls -l "$HOME/.android/" 2>&1
+            file "$HOME/.android/debug.keystore" 2>&1
+            echo "== www =="
+            ls -l www www/assets 2>&1
+            echo "== patch =="
+            python3 -c 's=open("www/assets/index-ByDp_M3i.js").read(); print("has_old", "basename:`/app/app_17hd6e8s6j5`" in s); print("has_root", "basename:`/`" in s); print("cdn", "lf-miaoda-static" in s)' 2>&1
+            echo "== gradle tail =="
+            tail -n 120 gradle.log 2>&1
+            echo "== apk =="
+            ls -l android/app/build/outputs/apk/debug/ 2>&1
+          } > diag.txt 2>&1
+          git add -f diag.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "diag [skip ci]" || true
+          git push origin HEAD:main || true
