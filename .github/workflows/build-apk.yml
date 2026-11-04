@@ -33,7 +33,15 @@ jobs:
           mkdir -p www/assets
           curl -fsSL -o www/assets/index-ByDp_M3i.js "https://lf-miaoda-static.feishucdn.com/app_17hd6e8s6j5/2/client/assets/index-ByDp_M3i.js"
           curl -fsSL -o www/assets/index-DetC7YQ3.css "https://lf-miaoda-static.feishucdn.com/app_17hd6e8s6j5/2/client/assets/index-DetC7YQ3.css"
-          ls -R www
+
+      - name: Patch build for in-app container
+        run: python3 tools/patch-basename.py
+
+      - name: Use stable debug keystore
+        run: |
+          mkdir -p "$HOME/.android"
+          base64 -d keystore/debug.keystore.b64 > "$HOME/.android/debug.keystore"
+          ls -l "$HOME/.android/debug.keystore"
 
       - name: Install Capacitor
         run: |
