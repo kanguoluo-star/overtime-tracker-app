@@ -1,0 +1,37 @@
+name: Check download links
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/check.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check urls and apk contents
+        run: |
+          {
+            echo "commit=${{ github.sha }}"
+            for u in \
+              "https://cdn.jsdelivr.net/gh/kanguoluo-star/overtime-tracker-app@main/apk/overtime-tracker.apk" \
+              "https://raw.githubusercontent.com/kanguoluo-star/overtime-tracker-app/main/apk/overtime-tracker.apk" \
+              "https://github.com/kanguoluo-star/overtime-tracker-app/releases/download/apk-2/overtime-tracker.apk" ; do
+              code=$(curl -s -o /dev/null -L -w "%{http_code}:%{size_download}:%{content_type}" "$u" || echo "curlfail")
+              echo "$code $u"
+            done
+            echo "--- apk files ---"
+            unzip -l apk/overtime-tracker.apk | grep -E "assets/public" | head -40
+          } > status.txt
+          cat status.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status.txt
+          git commit -m "chore: update link status [skip ci]" || echo "no change"
+          git push origin HEAD:main || echo "push skipped"
