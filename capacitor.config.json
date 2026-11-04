@@ -1,0 +1,8 @@
+{
+  "appId": "com.kanguoluo.overtimetracker",
+  "appName": "加班工时统计",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

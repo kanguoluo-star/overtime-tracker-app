@@ -1,0 +1,73 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Fetch web app assets
+        run: |
+          set -e
+          mkdir -p www/assets
+          curl -fsSL -o www/assets/index-ByDp_M3i.js "https://lf-miaoda-static.feishucdn.com/app_17hd6e8s6j5/2/client/assets/index-ByDp_M3i.js"
+          curl -fsSL -o www/assets/index-DetC7YQ3.css "https://lf-miaoda-static.feishucdn.com/app_17hd6e8s6j5/2/client/assets/index-DetC7YQ3.css"
+          ls -R www
+
+      - name: Install Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 --no-audit --no-fund
+
+      - name: Add Android platform
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk overtime-tracker.apk
+
+      - name: Commit APK to repo
+        run: |
+          mkdir -p apk
+          cp overtime-tracker.apk apk/overtime-tracker.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apk/overtime-tracker.apk
+          git commit -m "build: refresh apk [skip ci]" || echo "no change"
+          git push origin HEAD:main || echo "push skipped"
+
+      - name: Publish APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: "加班工时统计 APK build ${{ github.run_number }}"
+          files: overtime-tracker.apk
+          draft: false
