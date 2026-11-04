@@ -1,0 +1,10 @@
+commit=d07f96febe9495757e4807625b3caf8489307339
+200:3984254:application/vnd.android.package-archive https://cdn.jsdelivr.net/gh/kanguoluo-star/overtime-tracker-app@main/apk/overtime-tracker.apk
+200:3984254:application/octet-stream https://raw.githubusercontent.com/kanguoluo-star/overtime-tracker-app/main/apk/overtime-tracker.apk
+404:9:text/plain; charset=utf-8 https://github.com/kanguoluo-star/overtime-tracker-app/releases/download/apk-2/overtime-tracker.apk
+--- apk files ---
+   586197  1981-01-01 01:01   assets/public/assets/index-ByDp_M3i.js
+   117226  1981-01-01 01:01   assets/public/assets/index-DetC7YQ3.css
+        0  1981-01-01 01:01   assets/public/cordova.js
+        0  1981-01-01 01:01   assets/public/cordova_plugins.js
+      516  1981-01-01 01:01   assets/public/index.html
